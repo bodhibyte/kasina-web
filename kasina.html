@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Customizer</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            touch-action: manipulation;
+        }
+
+        #circle {
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #controls.visible {
+            opacity: 1;
+        }
+
+        #saveButton,
+        #loadButton {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        #saveButton:hover,
+        #loadButton:hover {
+            background-color: #0056b3;
+        }
+
+        #presets {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .presetButton {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: white;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .presetCircle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .deleteButton {
+            margin-left: auto;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: red;
+            color: white;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .presetButton:hover .deleteButton {
+            opacity: 1;
+        }
+
+        .deleteButton svg {
+            fill: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="circle"></div>
+
+    <div id="controls">
+        <label for="size">Size:</label>
+        <input type="range" id="size" name="size" min="10" max="500" value="100" style="width: 100%;">
+        <br>
+        <label for="color">Color:</label>
+        <input type="color" id="color" name="color" value="#ff0000" style="width: 100%;">
+        <br>
+        <button id="saveButton">Save Preset</button>
+        <div id="presets"></div>
+    </div>
+
+    <script>
+        const circle = document.getElementById('circle');
+        const controls = document.getElementById('controls');
+        const sizeInput = document.getElementById('size');
+        const colorInput = document.getElementById('color');
+        const saveButton = document.getElementById('saveButton');
+        const presetsContainer = document.getElementById('presets');
+        let controlsTimeout;
+
+        function updateCircle() {
+            const size = sizeInput.value;
+            const color = colorInput.value;
+
+            circle.style.width = size + 'px';
+            circle.style.height = size + 'px';
+            circle.style.backgroundColor = color;
+            circle.style.left = `calc(50% - ${size / 2}px)`;
+            circle.style.top = `calc(50% - ${size / 2}px)`;
+        }
+
+        function savePreset() {
+            const size = sizeInput.value;
+            const color = colorInput.value;
+            const presets = JSON.parse(localStorage.getItem('circlePresets')) || [];
+
+            const newPreset = {
+                size,
+                color
+            };
+            const isDuplicate = presets.some(preset => preset.size === size && preset.color === color);
+
+            if (!isDuplicate) {
+                presets.push(newPreset);
+                localStorage.setItem('circlePresets', JSON.stringify(presets));
+                console.info('Preset saved!');
+                loadPresets();
+            } else {
+                console.info('This preset already exists!');
+            }
+        }
+
+        function loadPreset(index) {
+            const presets = JSON.parse(localStorage.getItem('circlePresets')) || [];
+            if (presets[index]) {
+                sizeInput.value = presets[index].size;
+                colorInput.value = presets[index].color;
+                updateCircle();
+            }
+        }
+
+        function deletePreset(index) {
+            let presets = JSON.parse(localStorage.getItem('circlePresets')) || [];
+            if (presets[index]) {
+                presets.splice(index, 1);
+                localStorage.setItem('circlePresets', JSON.stringify(presets));
+                console.info('Preset deleted!');
+                loadPresets();
+            }
+        }
+
+        function loadPresets() {
+            const presets = JSON.parse(localStorage.getItem('circlePresets')) || [];
+            presetsContainer.innerHTML = '';
+            presets.forEach((preset, index) => {
+                const presetButton = document.createElement('div');
+                presetButton.className = 'presetButton';
+                presetButton.innerHTML = `
+                    <div class="presetCircle" style="background-color: ${preset.color};"></div>
+                    <span>Preset ${index + 1}: Radius ${preset.size}px</span>
+                    <button class="deleteButton" onclick="deletePreset(${index})"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M3 6h18v2H3V6zm1 3h16v14c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V9zm5 2v10h2V11H9zm4 0v10h2V11h-2zm5-7h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg></button>
+                `;
+                presetButton.addEventListener('click', () => loadPreset(index));
+                presetsContainer.appendChild(presetButton);
+            });
+        }
+
+        function showControls() {
+            controls.classList.add('visible');
+            if (controlsTimeout) {
+                clearTimeout(controlsTimeout);
+            }
+            controlsTimeout = setTimeout(() => {
+                controls.classList.remove('visible');
+            }, 3000);
+        }
+
+        sizeInput.addEventListener('input', updateCircle);
+        colorInput.addEventListener('input', updateCircle);
+        saveButton.addEventListener('click', savePreset);
+
+        // Show controls on any touch or click event
+        document.addEventListener('click', showControls);
+        document.addEventListener('touchstart', showControls);
+
+        // Load presets on page load
+        window.addEventListener('load', () => {
+            loadPresets();
+            updateCircle();
+        });
+
+        // Make deletePreset globally accessible
+        window.deletePreset = deletePreset;
+    </script>
+</body>
+
+</html>
