@@ -37,10 +37,12 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
             opacity: 0;
             transition: opacity 0.5s;
+            pointer-events: none;
         }
 
         #controls.visible {
             opacity: 1;
+            pointer-events: auto;
         }
 
         #saveButton,
@@ -207,12 +209,21 @@
 
         function showControls() {
             controls.classList.add('visible');
+            setControlsDisabled(false);
             if (controlsTimeout) {
                 clearTimeout(controlsTimeout);
             }
             controlsTimeout = setTimeout(() => {
                 controls.classList.remove('visible');
+                setControlsDisabled(true);
             }, 3000);
+        }
+
+        function setControlsDisabled(disabled) {
+            const controlsElements = controls.querySelectorAll('input, button');
+            controlsElements.forEach(element => {
+                element.disabled = disabled;
+            });
         }
 
         function enterFullScreen() {
@@ -251,6 +262,7 @@
         window.addEventListener('load', () => {
             loadPresets();
             updateCircle();
+            setControlsDisabled(true);
         });
 
         // Make deletePreset globally accessible
