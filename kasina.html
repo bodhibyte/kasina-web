@@ -44,7 +44,8 @@
         }
 
         #saveButton,
-        #loadButton {
+        #loadButton,
+        #fullScreenButton {
             margin-top: 10px;
             padding: 10px;
             border: none;
@@ -58,7 +59,8 @@
         }
 
         #saveButton:hover,
-        #loadButton:hover {
+        #loadButton:hover,
+        #fullScreenButton:hover {
             background-color: #0056b3;
         }
 
@@ -122,6 +124,7 @@
         <br>
         <button id="saveButton">Save Preset</button>
         <div id="presets"></div>
+        <button id="fullScreenButton">Full Screen</button>
     </div>
 
     <script>
@@ -131,6 +134,7 @@
         const colorInput = document.getElementById('color');
         const saveButton = document.getElementById('saveButton');
         const presetsContainer = document.getElementById('presets');
+        const fullScreenButton = document.getElementById('fullScreenButton');
         let controlsTimeout;
 
         function updateCircle() {
@@ -211,13 +215,37 @@
             }, 3000);
         }
 
+        function enterFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        let pressTimer;
+
+        function longPressStart() {
+            pressTimer = setTimeout(showControls, 500); // Long press detected after 500ms
+        }
+
+        function longPressEnd() {
+            clearTimeout(pressTimer);
+        }
+
         sizeInput.addEventListener('input', updateCircle);
         colorInput.addEventListener('input', updateCircle);
         saveButton.addEventListener('click', savePreset);
+        fullScreenButton.addEventListener('click', enterFullScreen);
 
-        // Show controls on any touch or click event
-        document.addEventListener('click', showControls);
-        document.addEventListener('touchstart', showControls);
+        // Detect double-click for desktop
+        document.addEventListener('dblclick', showControls);
+
+        // Detect long press for mobile
+        document.addEventListener('touchstart', longPressStart);
+        document.addEventListener('touchend', longPressEnd);
 
         // Load presets on page load
         window.addEventListener('load', () => {
